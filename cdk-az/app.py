@@ -36,14 +36,33 @@ class BaseVPCStack(core.Stack):
         
         ###### CAPACITY PROVIDERS SECTION #####
         # Adding EC2 capacity to the ECS Cluster
-        self.asg = self.ecs_cluster.add_capacity(
-            "ECSEC2Capacity",
+        self.asg1 = self.ecs_cluster.add_capacity(
+            "ECSEC2Capacity1",
             instance_type=aws_ec2.InstanceType(instance_type_identifier='t3.small'),
             min_capacity=0,
-            max_capacity=10
+            max_capacity=10,
+            vpc_subnets=aws_ec2.SubnetSelection(availability_zones=['us-east-1a'])
         )
         
-        core.CfnOutput(self, "EC2AutoScalingGroupName", value=self.asg.auto_scaling_group_name, export_name="EC2ASGName")
+        self.asg2 = self.ecs_cluster.add_capacity(
+            "ECSEC2Capacity2",
+            instance_type=aws_ec2.InstanceType(instance_type_identifier='t3.small'),
+            min_capacity=0,
+            max_capacity=10,
+            vpc_subnets=aws_ec2.SubnetSelection(availability_zones=['us-east-1b'])
+        )
+
+        self.asg3 = self.ecs_cluster.add_capacity(
+            "ECSEC2Capacity3",
+            instance_type=aws_ec2.InstanceType(instance_type_identifier='t3.small'),
+            min_capacity=0,
+            max_capacity=10,
+            vpc_subnets=aws_ec2.SubnetSelection(availability_zones=['us-east-1c'])
+        )
+
+        core.CfnOutput(self, "EC2AutoScalingGroupName1", value=self.asg1.auto_scaling_group_name, export_name="EC2ASGName1")
+        core.CfnOutput(self, "EC2AutoScalingGroupName2", value=self.asg2.auto_scaling_group_name, export_name="EC2ASGName2")
+        core.CfnOutput(self, "EC2AutoScalingGroupName3", value=self.asg3.auto_scaling_group_name, export_name="EC2ASGName3")
         ##### END CAPACITY PROVIDER SECTION #####
         
         # Namespace details as CFN output
@@ -61,7 +80,9 @@ class BaseVPCStack(core.Stack):
         
         # When enabling EC2, we need the security groups "registered" to the cluster for imports in other service stacks
         if self.ecs_cluster.connections.security_groups:
-            self.cluster_outputs['SECGRPS'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][0])
+            self.cluster_outputs['SECGRPS1'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][0])
+            self.cluster_outputs['SECGRPS2'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][1]) 
+            self.cluster_outputs['SECGRPS3'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][2]) 
         
         # Frontend service to backend services on 3000
         self.services_3000_sec_group = aws_ec2.SecurityGroup(
@@ -87,7 +108,9 @@ class BaseVPCStack(core.Stack):
         core.CfnOutput(self, "NSId", value=self.namespace_outputs['ID'], export_name="NSID")
         core.CfnOutput(self, "FE2BESecGrp", value=self.services_3000_sec_group.security_group_id, export_name="SecGrpId")
         core.CfnOutput(self, "ECSClusterName", value=self.cluster_outputs['NAME'], export_name="ECSClusterName")
-        core.CfnOutput(self, "ECSClusterSecGrp", value=self.cluster_outputs['SECGRPS'], export_name="ECSSecGrpList")
+        core.CfnOutput(self, "ECSClusterSecGrp1", value=self.cluster_outputs['SECGRPS1'], export_name="ECSSecGrpList1")
+        core.CfnOutput(self, "ECSClusterSecGrp2", value=self.cluster_outputs['SECGRPS2'], export_name="ECSSecGrpList2")
+        core.CfnOutput(self, "ECSClusterSecGrp3", value=self.cluster_outputs['SECGRPS3'], export_name="ECSSecGrpList3")
         core.CfnOutput(self, "ServicesSecGrp", value=self.services_3000_sec_group.security_group_id, export_name="ServicesSecGrp")
 
 

@@ -36,14 +36,24 @@ class BaseVPCStack(core.Stack):
         
         ###### CAPACITY PROVIDERS SECTION #####
         # Adding EC2 capacity to the ECS Cluster
-        self.asg = self.ecs_cluster.add_capacity(
-            "ECSEC2Capacity",
+        self.asg1 = self.ecs_cluster.add_capacity(
+            "ECSEC2Capacity-OD",
             instance_type=aws_ec2.InstanceType(instance_type_identifier='t3.small'),
             min_capacity=0,
             max_capacity=10
         )
         
-        core.CfnOutput(self, "EC2AutoScalingGroupName", value=self.asg.auto_scaling_group_name, export_name="EC2ASGName")
+        self.asg2 = self.ecs_cluster.add_capacity(
+            "ECSEC2Capacity-Spot",
+            instance_type=aws_ec2.InstanceType(instance_type_identifier='t3.small'),
+            min_capacity=0,
+            max_capacity=10,
+            spot_price = "0.0208",
+            spot_instance_draining=True
+        )
+
+        core.CfnOutput(self, "EC2AutoScalingGroupNameOD", value=self.asg1.auto_scaling_group_name, export_name="EC2ASGName-OD")
+        core.CfnOutput(self, "EC2AutoScalingGroupNameSpot", value=self.asg2.auto_scaling_group_name, export_name="EC2ASGName-Spot")
         ##### END CAPACITY PROVIDER SECTION #####
         
         # Namespace details as CFN output
@@ -61,7 +71,8 @@ class BaseVPCStack(core.Stack):
         
         # When enabling EC2, we need the security groups "registered" to the cluster for imports in other service stacks
         if self.ecs_cluster.connections.security_groups:
-            self.cluster_outputs['SECGRPS'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][0])
+            self.cluster_outputs['SECGRPS1'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][0])
+            self.cluster_outputs['SECGRPS2'] = str([x.security_group_id for x in self.ecs_cluster.connections.security_groups][1]) 
         
         # Frontend service to backend services on 3000
         self.services_3000_sec_group = aws_ec2.SecurityGroup(
@@ -87,7 +98,8 @@ class BaseVPCStack(core.Stack):
         core.CfnOutput(self, "NSId", value=self.namespace_outputs['ID'], export_name="NSID")
         core.CfnOutput(self, "FE2BESecGrp", value=self.services_3000_sec_group.security_group_id, export_name="SecGrpId")
         core.CfnOutput(self, "ECSClusterName", value=self.cluster_outputs['NAME'], export_name="ECSClusterName")
-        core.CfnOutput(self, "ECSClusterSecGrp", value=self.cluster_outputs['SECGRPS'], export_name="ECSSecGrpList")
+        core.CfnOutput(self, "ECSClusterSecGrp1", value=self.cluster_outputs['SECGRPS1'], export_name="ECSSecGrpList1")
+        core.CfnOutput(self, "ECSClusterSecGrp2", value=self.cluster_outputs['SECGRPS2'], export_name="ECSSecGrpList2")
         core.CfnOutput(self, "ServicesSecGrp", value=self.services_3000_sec_group.security_group_id, export_name="ServicesSecGrp")
 
 
